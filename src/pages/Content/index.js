@@ -1,33 +1,34 @@
+import { createMatrixFilters } from './modules/createMatrixFilters';
+
 const applyStyles = (stateForDomain) => {
   const style = document.createElement('style');
   style.id = 'arcboostify-styles';
 
-  // If disabled, remove any existing styles
+  // If disabled, remove any existing styles and SVG filters
   if (!stateForDomain.enabled) {
     style.textContent = '';
     const existingStyle = document.getElementById('arcboostify-styles');
     if (existingStyle) {
       existingStyle.remove();
     }
+    const existingSvg = document.getElementById('arcboostify-svg-filters');
+    if (existingSvg) {
+      existingSvg.remove();
+    }
     return;
   }
 
-  const inverseHue = -stateForDomain.hue;
-  const inverseContrast =
-    stateForDomain.contrast !== 0 ? 1 / stateForDomain.contrast : 1;
-  const inverseBrightness =
-    stateForDomain.brightness !== 0 ? 1 / stateForDomain.brightness : 1;
-  const inverseSaturation =
-    stateForDomain.saturation !== 0 ? 1 / stateForDomain.saturation : 1;
-  const inverseSepia = 0;
+  // Create and inject SVG filter for combined matrix transformation
+  const existingSvg = document.getElementById('arcboostify-svg-filters');
+  if (existingSvg) {
+    existingSvg.remove();
+  }
 
-  const inverseFilterForImg = `
-    sepia(${inverseSepia}) contrast(${inverseContrast}) brightness(${inverseBrightness}) hue-rotate(${inverseHue}deg) saturate(${inverseSaturation}); 
-  `;
+  const svgFilter = createMatrixFilters(stateForDomain);
+  (document.head || document.documentElement).appendChild(svgFilter);
 
-  const htmlFilter = `
-  sepia(${stateForDomain.sepia}) contrast(${stateForDomain.contrast}) brightness(${stateForDomain.brightness}) hue-rotate(${stateForDomain.hue}deg) saturate(${stateForDomain.saturation}); 
-  `;
+  const filterHtml = 'url(#arc-combined-filter)';
+  const filterInverse = 'url(#arc-inverse-combined-filter)';
 
   style.textContent = `
     ${
@@ -51,13 +52,43 @@ const applyStyles = (stateForDomain) => {
     }
 
     html {
-      filter: ${htmlFilter} !important; 
+      filter: ${filterHtml} !important; 
       transition: none !important;
     }
 
-    img, svg, canvas, video, iframe, picture, object, embed {
-      filter: ${inverseFilterForImg} !important;
+    ${
+      !stateForDomain.enabledImg
+        ? `
+      img, picture:not(:has(img, svg, picture)) {
+        filter: ${filterInverse} !important;
+        transition: none !important;
+      }`
+        : ''
+    }
+
+    ${
+      !stateForDomain.enabledSvg
+        ? `
+      svg {
+        filter: ${filterInverse} !important;
+        transition: none !important;
+      }`
+        : ''
+    }
+
+    canvas, video, iframe, object, embed {
+      filter: ${filterInverse} !important;
       transition: none !important;
+    }
+
+    ${
+      !stateForDomain.enabledText
+        ? `
+      :is(p, span, h1, h2, h3, h4, h5, h6, li):not(:has(:is(p, span, svg, img, picture, div, article, section,
+      header, footer, nav, main))) {
+        filter: ${filterInverse} !important;
+      }`
+        : ''
     }
   `;
 
@@ -67,6 +98,19 @@ const applyStyles = (stateForDomain) => {
   }
 
   (document.head || document.documentElement).appendChild(style);
+};
+
+// Add this new function to ensure SVG filter is always present
+const ensureSvgFilterExists = (stateForDomain) => {
+  if (!stateForDomain.enabled) {
+    return;
+  }
+
+  const existingSvg = document.getElementById('arcboostify-svg-filters');
+  if (!existingSvg) {
+    const svgFilter = createMatrixFilters(stateForDomain);
+    (document.head || document.documentElement).appendChild(svgFilter);
+  }
 };
 
 const initializeStyles = () => {
@@ -83,6 +127,55 @@ const initializeStyles = () => {
     }
 
     applyStyles(stateForDomain);
+
+    // Set up MutationObserver to watch for DOM changes
+    const observer = new MutationObserver((mutations) => {
+      let shouldReapply = false;
+
+      mutations.forEach((mutation) => {
+        // Check if our SVG filter was removed
+        if (mutation.type === 'childList' && mutation.removedNodes) {
+          for (const node of mutation.removedNodes) {
+            if (
+              node.id === 'arcboostify-svg-filters' ||
+              (node.querySelector &&
+                node.querySelector('#arcboostify-svg-filters'))
+            ) {
+              shouldReapply = true;
+              break;
+            }
+          }
+        }
+
+        // Check if head or documentElement was replaced
+        if (
+          mutation.type === 'childList' &&
+          (mutation.target === document.head ||
+            mutation.target === document.documentElement)
+        ) {
+          shouldReapply = true;
+        }
+      });
+
+      if (shouldReapply) {
+        // Remove delay entirely for immediate injection
+        ensureSvgFilterExists(stateForDomain);
+      }
+    });
+
+    // Start observing with more aggressive settings
+    observer.observe(document.head, {
+      childList: true,
+      subtree: true,
+      attributes: false,
+      characterData: false,
+    });
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: false,
+      characterData: false,
+    });
   });
 };
 
