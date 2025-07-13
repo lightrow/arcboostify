@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './Popup.css';
 import { Range } from './Range/Range';
 import { Checkbox } from './Checkbox/Checkbox';
-import logo from '../../assets/img/icon-128.png';
 import { RgbaColorPicker } from 'react-colorful';
+import icon from '../../assets/img/icon-128.png';
 
 const storage = chrome.storage?.local;
 
@@ -144,6 +144,7 @@ const Popup = () => {
 
   return (
     <div className="App">
+      <img src={icon} alt="Web Muralist" className="icon" />
       <section>
         <label>Font Family</label>
         <input

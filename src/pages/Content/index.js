@@ -59,7 +59,7 @@ const applyStyles = (stateForDomain) => {
     ${
       !stateForDomain.enabledImg
         ? `
-      img, picture:not(:has(img, svg, picture)) {
+      img, picture:not(:has(img, svg, picture)), [style*="background:url"], [style*="background-image:url"], [style*="background: url"], [style*="background-image: url"], [background] {
         filter: ${filterInverse} !important;
         transition: none !important;
       }`

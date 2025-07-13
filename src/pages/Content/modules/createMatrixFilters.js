@@ -162,10 +162,6 @@ const Matrix = {
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
 
-    const lumR = 0.2126;
-    const lumG = 0.7152;
-    const lumB = 0.0722;
-
     // Hue rotation matrix that preserves neutral colors
     // This ensures whites, grays, and blacks stay neutral
     return [
@@ -236,7 +232,6 @@ export const createMatrixFilters = (stateForDomain) => {
   // Start with identity matrix
 
   let combinedMatrix = Matrix.identity();
-  let inverseMatrix = Matrix.identity();
 
   // Apply each filter by multiplying matrices in REVERSE order
   // This ensures transformations are applied in the correct sequence]
@@ -258,38 +253,6 @@ export const createMatrixFilters = (stateForDomain) => {
   combinedMatrix = Matrix.multiply(hueMatrix, combinedMatrix);
   combinedMatrix = Matrix.multiply(tintMatrix, combinedMatrix);
   combinedMatrix = Matrix.multiply(tintBrightnessBoost, combinedMatrix); // Add boost after tint
-
-  // Create "opposite" matrix using simple negation/inversion of parameters
-  // instead of mathematical matrix inversion
-  let oppositeMatrix = Matrix.identity();
-
-  const oppositeHueMatrix = Matrix.hueRotate(-stateForDomain.hue);
-  const oppositeContrastMatrix = Matrix.contrast(2 - stateForDomain.contrast); // For contrast=1.5, opposite=0.5
-  const oppositeBrightnessMatrix = Matrix.brightness(
-    2 - stateForDomain.brightness
-  ); // For brightness=1.5, opposite=0.5
-  const oppositeSaturationMatrix = Matrix.saturation(
-    2 - stateForDomain.saturation
-  ); // For saturation=1.5, opposite=0.5
-  const oppositeTintMatrix = Matrix.tint({
-    r: stateForDomain.tint.r,
-    g: stateForDomain.tint.g,
-    b: stateForDomain.tint.b,
-    a: -stateForDomain.tint.a, // Simply negate tint intensity
-  });
-  const oppositeTintBrightnessBoost = Matrix.brightness(
-    1 - stateForDomain.tint.a * 0.5
-  ); // Opposite of boost
-
-  // Apply in same order as forward (not reverse)
-  oppositeMatrix = Matrix.multiply(oppositeSaturationMatrix, oppositeMatrix);
-  oppositeMatrix = Matrix.multiply(oppositeBrightnessMatrix, oppositeMatrix);
-  oppositeMatrix = Matrix.multiply(oppositeContrastMatrix, oppositeMatrix);
-  oppositeMatrix = Matrix.multiply(oppositeHueMatrix, oppositeMatrix);
-  oppositeMatrix = Matrix.multiply(oppositeTintMatrix, oppositeMatrix);
-  oppositeMatrix = Matrix.multiply(oppositeTintBrightnessBoost, oppositeMatrix);
-
-  inverseMatrix = oppositeMatrix;
 
   // Convert matrices to SVG filter format (4x5 matrix = 20 values)
   const matrixToSVG = (matrix) => {
@@ -337,24 +300,6 @@ export const createMatrixFilters = (stateForDomain) => {
       )}" />
   </filter>
   `;
-
-  // // Forward filter
-  // const filter = document.createElementNS(svgNS, 'filter');
-  // filter.id = 'arc-combined-filter';
-  // const feColorMatrix = document.createElementNS(svgNS, 'feColorMatrix');
-  // feColorMatrix.setAttribute('type', 'matrix');
-  // feColorMatrix.setAttribute('values', matrixToSVG(combinedMatrix));
-  // filter.appendChild(feColorMatrix);
-  // defs.appendChild(filter);
-
-  // // Inverse filter
-  // const filterInverse = document.createElementNS(svgNS, 'filter');
-  // filterInverse.id = 'arc-inverse-combined-filter';
-  // const feColorMatrixInverse = document.createElementNS(svgNS, 'feColorMatrix');
-  // feColorMatrixInverse.setAttribute('type', 'matrix');
-  // feColorMatrixInverse.setAttribute('values', matrixToSVG(inverseMatrix));
-  // filterInverse.appendChild(feColorMatrixInverse);
-  // defs.appendChild(filterInverse);
 
   svg.appendChild(defs);
 

@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "ArcBoostify",
-  "description": "Arc Boosts for Chrome",
+  "name": "Web Muralist",
+  "description": "Recolor web pages using simple sliders and apply custom font. Inspired by Arc Boosts.",
   "options_page": "options.html",
   "background": { "service_worker": "background.bundle.js" },
   "action": {
     "default_popup": "popup.html",
-    "default_icon": "icon-34.png"
+    "default_icon": "icon.png"
   },
   "icons": {
     "128": "icon-128.png"
@@ -23,7 +23,7 @@
   "permissions": ["storage", "tabs"],
   "web_accessible_resources": [
     {
-      "resources": ["content.styles.css", "icon-16.png"],
+      "resources": ["content.styles.css", "icon.png"],
       "matches": []
     }
   ]
