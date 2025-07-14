@@ -199,24 +199,27 @@ const Matrix = {
     g = g / 255;
     b = b / 255;
 
-    // Create tint matrix based on the original color (no boost here)
-    const tintMatrix = [
-      [r, 0, 0, 0, 0],
-      [0, g, 0, 0, 0],
-      [0, 0, b, 0, 0],
-      [0, 0, 0, 1, 0],
-      [0, 0, 0, 0, 1],
-    ];
+    // Create a saturation-aware tint matrix that preserves neutral colors
+    // This reduces tint intensity to preserve neutrals without adding brightness
+    const neutralPreservation = 1; // How much to preserve neutrals (0-1)
 
-    // Interpolate between identity and tint matrix
+    // Adjust intensity based on neutral preservation
+    const adjustedIntensity = intensity * (1 - neutralPreservation * 0.3);
+
     const result = [];
     for (let i = 0; i < 5; i++) {
       result[i] = [];
       for (let j = 0; j < 5; j++) {
         if (i < 3 && j < 3) {
-          // For RGB channels, interpolate between identity and tint
-          result[i][j] =
-            (1 - intensity) * (i === j ? 1 : 0) + intensity * tintMatrix[i][j];
+          if (i === j) {
+            // Diagonal elements: blend between identity and tint color
+            const tintColor = i === 0 ? r : i === 1 ? g : b;
+            result[i][j] =
+              1 - adjustedIntensity + adjustedIntensity * tintColor;
+          } else {
+            // Off-diagonal elements: very minimal cross-channel mixing
+            result[i][j] = 0;
+          }
         } else {
           // For alpha and offset channels, keep identity values
           result[i][j] = i === j ? 1 : 0;

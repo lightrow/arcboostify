@@ -31,6 +31,11 @@ const applyStyles = (stateForDomain) => {
   const filterInverse = 'url(#arc-inverse-combined-filter)';
 
   style.textContent = `
+    html {
+      filter: ${filterHtml} !important; 
+      transition: none !important;
+    }
+
     ${
       stateForDomain.fontFamily
         ? `
@@ -51,17 +56,11 @@ const applyStyles = (stateForDomain) => {
         : ''
     }
 
-    html {
-      filter: ${filterHtml} !important; 
-      transition: none !important;
-    }
-
     ${
       !stateForDomain.enabledImg
         ? `
       img, picture:not(:has(img, svg, picture)), [style*="background:url"], [style*="background-image:url"], [style*="background: url"], [style*="background-image: url"], [background] {
-        filter: ${filterInverse} !important;
-        transition: none !important;
+        filter: ${filterInverse};
       }`
         : ''
     }
@@ -70,24 +69,35 @@ const applyStyles = (stateForDomain) => {
       !stateForDomain.enabledSvg
         ? `
       svg {
-        filter: ${filterInverse} !important;
-        transition: none !important;
+        filter: ${filterInverse};
       }`
         : ''
     }
 
     canvas, video, iframe, object, embed {
-      filter: ${filterInverse} !important;
-      transition: none !important;
+      filter: ${filterInverse};
     }
 
     ${
       !stateForDomain.enabledText
         ? `
-      :is(p, span, h1, h2, h3, h4, h5, h6, li):not(:has(:is(p, span, svg, img, picture, div, article, section,
-      header, footer, nav, main))) {
-        filter: ${filterInverse} !important;
-      }`
+
+      :is(p,span,h1,h2,h3,h4,h5,h6,li):not(:has(img,picture,svg)) {
+        filter: ${filterInverse};
+      }
+
+      :is(p,span,h1,h2,h3,h4,h5,h6,li):not(:has(img,picture,svg)) * {
+        filter: unset;
+      }
+
+      html body :is(a,button,select){
+        filter: unset;
+      }
+
+      html body :is(a,button,select) *:not(:is(img,picture,svg,i)) {
+        filter: unset;
+      }
+      `
         : ''
     }
   `;
